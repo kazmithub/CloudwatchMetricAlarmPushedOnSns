@@ -1,0 +1,56 @@
+Parameters:
+
+  InstanceTypeParameters:
+    Description: Only deploy t2.micro instances.
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - m1.small
+  
+  ImageIdParameters:
+    Description: Only use ubuntu AMIs.
+    Type: String
+    Default: ami-06397100adf427136
+    AllowedValues:
+      - ami-06397100adf427136
+      # - ami-08692d171e3cf02d6
+  
+  KeynameParameters:
+    Description: use Kazmi-Key for all instances except when other is required.
+    Type: String
+    Default: "Kazmi-Key"
+    AllowedValues:
+      - "Kazmi-Key"
+      - "alam-keypair"
+
+
+Resources:
+
+  MyPublicInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      IamInstanceProfile: AhsanCloudwatch
+      AvailabilityZone: "us-west-2a"
+      ImageId: ami-005bdb005fb00e791
+      KeyName: !Ref KeynameParameters
+      SecurityGroupIds: 
+        - !ImportValue vpcStack-SG
+      SubnetId: !ImportValue vpcStack-publicSubnet 
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -x
+          sleep 30
+          apt-get update -y
+          cd ~
+          wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+          sudo dpkg -i -E ./amazon-cloudwatch-agent.deb
+          cd ~
+          wget https://alamhtml.s3.amazonaws.com/Ahsan/cloudformation.json
+          /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:cloudformation.json -s
+      Tags:
+      - Key: "Name"
+        Value: "AhsanWeb"
+  
