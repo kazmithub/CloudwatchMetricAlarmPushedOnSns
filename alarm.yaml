@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+
+  instanceId:
+    Description: "Choose an instance id"
+    Type: AWS::EC2::Instance::Id
+
+  instanceName:
+    Description: "Please provide EC2 instance name"
+    Type: "String"
+    MinLength: '1'
+    MaxLength: '50'
+
+
+Resources:
+
+  mySnsTopic:
+    Type: AWS::SNS::Topic
+    Properties: 
+      Subscription: 
+        - Endpoint: !GetAtt mySqsQueue.Arn
+          Protocol: sqs
+        - Endpoint: xnkazmi@gmail.com 
+          Protocol: email
+      TopicName: cloudWatchAlarm
+
+  mySqsQueue:
+    Type: AWS::SQS::Queue
+
+  myCpuAlarm: 
+    Type: AWS::CloudWatch::Alarm
+    DeletionPolicy: Retain 
+    Properties:
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Period: '60' 
+      EvaluationPeriods: '2'
+      Threshold: '10'
+      Statistic: Maximum
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref instanceId
+      OKActions:
+      - !Ref mySnsTopic
+      AlarmActions:
+      - !Ref mySnsTopic
+      
+  EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: instanceChangeDetection
+      Description: A CloudWatch Event Rule that detects any changes to EC2 Instance service.
+      State: ENABLED
+      Targets:
+        - Arn:
+            Ref: mySnsTopic
+          Id: target-id1
+      EventPattern:
+        source: 
+          - aws.ec2
+
+  sqsPolicy:    
+    Type: AWS::SQS::QueuePolicy
+    Properties: 
+      PolicyDocument: {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "SQS:*",
+            "Resource": "arn:aws:sqs:*:*:*"
+          }
+        ]
+      }
+      Queues: 
+        - !Ref mySqsQueue
