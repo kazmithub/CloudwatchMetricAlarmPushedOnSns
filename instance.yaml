@@ -5,10 +5,10 @@ Parameters:
     Type: String
     Default: t2.micro
     AllowedValues:
-      - t2.micro
       - m1.small
+      - t2.micro
       - t2.medium
-  
+        
   ImageIdParameters:
     Description: Only use ubuntu AMIs.
     Type: String
