@@ -23,3 +23,4 @@ Then, instance.yaml is uploaded to setup an ec2 instance and configure/install c
 it up to send custom metrics and logs to Cloudwatch.
 
 Finally, alarm.yaml configures the required alarm. Sends it to SNS which then sends it to email and SQS. 
+
