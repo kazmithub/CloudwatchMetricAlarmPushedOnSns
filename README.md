@@ -1,39 +1,58 @@
-# CloudwatchMetricAlarmPushedOnSns
+# CloudWatch Metric Alarms with SNS Notifications
 
-## Description
+AWS monitoring stack using CloudWatch custom metrics, alarms, dashboards, and multi-destination SNS notifications.
 
-An instance is created with Cloud-watch agent installed and configured. Custom logs are pushed to 
-Cloud-watch. Custom metrics are created. Alarms are configured. Alarms are then pushed to SNS which
-routes it to my email and SQS. 
+## Architecture
 
-## Files
+```
+EC2 Instance (CloudWatch Agent)
+        |
+        v
+   CloudWatch Logs + Custom Metrics
+        |
+        v
+   CloudWatch Alarms (CPU, Memory, Disk)
+        |
+        +---> Composite Alarms
+        |
+        v
+   SNS Topic
+        |
+        +---> Email Notifications
+        +---> SQS Queue (for processing)
+        +---> PagerDuty / Opsgenie (webhook)
+```
 
-It has 4 files to be uploaded as cloudformation stacks (California). 
+## Key Features
 
-1. vpc.yaml
-2. instance.yaml
-3. alarm.yaml
-4. cloudformation.json 
+- **Custom Metrics** - Memory, disk usage via CloudWatch Agent
+- **Log Aggregation** - EC2 logs shipped to CloudWatch Logs
+- **Metric Alarms** - CPU, memory, disk threshold alerting
+- **Composite Alarms** - Multi-metric conditions (e.g., CPU AND memory)
+- **CloudWatch Dashboard** - Visual monitoring of all metrics
+- **Multi-destination** - SNS to email, SQS, and external integrations
 
-## Working
+## PagerDuty / Opsgenie Integration
 
-Firstly, vpc.yaml is uploaded. It setups the environment required for the infrastructure to function.
+To integrate with incident management:
+1. Create an SNS subscription with HTTPS protocol
+2. Use the PagerDuty/Opsgenie SNS integration endpoint URL
+3. Confirm the subscription
 
-Then, instance.yaml is uploaded to setup an ec2 instance and configure/install cloudwatch instance. It sets
-it up to send custom metrics and logs to Cloudwatch.
+```bash
+aws sns subscribe \
+  --topic-arn arn:aws:sns:us-east-1:ACCOUNT:alarm-topic \
+  --protocol https \
+  --notification-endpoint https://events.pagerduty.com/integration/YOUR_KEY/enqueue
+```
 
-Finally, alarm.yaml configures the required alarm. Sends it to SNS which then sends it to email and SQS. 
+## Deployment Order
 
+1. `vpc.yaml` - VPC and networking
+2. `instance.yaml` - EC2 with CloudWatch Agent
+3. `alarm.yaml` - Alarms and SNS topics
+4. `dashboard.yaml` - Monitoring dashboard
 
+## License
 
-
-
-
-
-
-
-
-
-
-
-
+MIT
