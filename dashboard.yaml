@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudWatch Dashboard for EC2 Monitoring
+
+Resources:
+  MonitoringDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: EC2-Monitoring
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "properties": {
+                "metrics": [
+                  ["AWS/EC2", "CPUUtilization", "InstanceId", "${EC2Instance}"],
+                  ["AWS/EC2", "NetworkIn", "InstanceId", "${EC2Instance}"],
+                  ["AWS/EC2", "NetworkOut", "InstanceId", "${EC2Instance}"]
+                ],
+                "period": 300,
+                "title": "EC2 Instance Metrics"
+              }
+            },
+            {
+              "type": "metric",
+              "properties": {
+                "metrics": [
+                  ["CWAgent", "mem_used_percent", "InstanceId", "${EC2Instance}"],
+                  ["CWAgent", "disk_used_percent", "InstanceId", "${EC2Instance}"]
+                ],
+                "period": 300,
+                "title": "Custom Metrics (Memory & Disk)"
+              }
+            }
+          ]
+        }
+
+  CompositeAlarm:
+    Type: AWS::CloudWatch::CompositeAlarm
+    Properties:
+      AlarmName: HighResourceUtilization
+      AlarmRule: ALARM("CPUAlarm") AND ALARM("MemoryAlarm")
+      AlarmDescription: Both CPU and Memory are above thresholds
